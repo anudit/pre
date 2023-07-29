@@ -23,7 +23,7 @@
   "scripts": {
     "build": "run-p build:*",
     "build:node": "tsup src/index.js --format esm,cjs --outDir lib --dts --minify --legacy-output --clean --keepNames --treeshake",
-    "buildnodedev": "tsup src/index.js --format esm,cjs --outDir lib --dts --legacy-output --clean --keepNames --treeshake",
+    "buildnodedev": "tsup src/index.js --format esm,cjs --outDir lib --legacy-output --clean --keepNames --treeshake",
     "build:browser": "tsup src/index.js --format iife --outDir dist --minify --clean --globalName=Convo --platform=browser",
     "bench": "cd ./../../benchmarks && pnpm bench",
     "example": "pnpm build && cd examples/nextjs && pnpm dev",
@@ -79,6 +79,8 @@
     "lib": "lib"
   },
   "dependencies": {
+    "@types/bn.js": "^5.1.1",
+    "@types/elliptic": "^6.4.14",
     "bn.js": "^5.2.1",
     "crypto-js": "^4.1.1",
     "elliptic": "^6.5.4",

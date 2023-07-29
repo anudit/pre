@@ -1,146 +1,49 @@
+/* tslint:disable */
 import BN from "bn.js";
 import CryptoJS from 'crypto-js';
-import elliptic from 'elliptic';
 import { sha256 } from 'js-sha256';
 
-const secp256k1 = new elliptic.ec('secp256k1');
-
-class Config {
-  constructor(curve) {
-    this._curve = curve;
-    this._default_curve = new Curve();
-  }
-  set_curve = (curve) => {
-    if (typeof curve == "undefined") {
-      curve = this._default_curve;
-    }
-    this._curve = curve;
-  }
-  set_curve_by_default = () => {
-    this.set_curve(this._default_curve)
-  }
-  curve = () => {
-    if (typeof this._curve == "undefined") {
-      this.set_curve_by_default();
-    }
-    return this._curve;
-  }
-}
-
-function default_curve() {
-  var config = new Config();
-  config.set_curve_by_default();
-  return config.curve();
-}
-
-class Curve {
-  constructor(name) {
-    if (typeof name == "undefined") {
-      name = 'secp256k1';
-    }
-    var curve = null;
-    if (['secp256k1'].includes(name)) {
-      curve = secp256k1;
-    }
-    this._curve = curve;
-    this._name = name;
-    this._order = curve.curve.n;
-    this._generator = curve.curve.g;
-    this._order_size = curve.curve.n.byteLength();
-  }
-  name = () => {
-    return this._name;
-  }
-  order = () => {
-    return this._order;
-  }
-  generator = () => {
-    return this._generator;
-  }
-  order_size = () => {
-    return this._order_size;
-  }
-}
-
-/// \brief Generic implementation for Scalar
-class Scalar {
-  constructor(bigInt /* BN */, curve /* Curve */) {
-    this._scalar = bigInt;
-    this._curve = curve;
-  }
-
-  curve = () => {
-    if (typeof this._curve == "undefined") {
-      this._curve = default_curve();
-    }
-    return this._curve;
-  }
-  /**
-   * valueOf
-   */
-  valueOf = () => { return this._scalar; }
-
-  /**
-   * \brief Getting BIGNUM bytes from existing BigInteger
-   * @return vector of bytes
-   */
-  to_bytes = () => {
-    var bytes = this._scalar.toArray();
-    if (bytes.length == 33) {
-      return bytes.slice(1, 33);
-    }
-    return bytes;
-  }
-
-  add = (sc /* Scalar */) => { return new Scalar(this.valueOf().add(sc.valueOf())); }
-  sub = (sc /* Scalar */) => { return new Scalar(this.valueOf().sub(sc.valueOf())); }
-  mul = (sc /* Scalar */) => { return new Scalar(this.valueOf().mul(sc.valueOf()).mod(this.curve().order())); }
-  eq = (sc /* Scalar */) => { return this.valueOf().eq(sc.valueOf()); }
-  invm = () => { return new Scalar(this.valueOf().invm(this.curve().order())); }
-
-}
-
-/**
- *  get length of BN
- */
-Scalar.expected_byte_length = function (curve /* Curve */) {
-  if (typeof curve == "undefined") {
-    curve = default_curve();
-  }
-  return curve.order_size();
-}
-
-/**
- * \brief Generate random BigInteger.
- * @return
- */
-Scalar.generate_random = function (curve) {
-  if (typeof curve == "undefined") {
-    curve = default_curve();
-  }
-  return new Scalar(curve._curve.genKeyPair().getPrivate())
-}
-
-/**
- * \brief Get BigInteger from big endian ordered bytes
- * @param buffer
- * @return
- */
-Scalar.from_bytes = function (buffer) {
-  if (buffer.length != Scalar.expected_byte_length() && buffer.length != 2 * Scalar.expected_byte_length()) {
-    throw new Error("Invalid length of data.");
-  }
-  return new Scalar(new BN(buffer));
-}
-
+import { Curve, default_curve } from './Config';
+import { Scalar } from './Math';
 
 /**
  * \brief Elliptic curve Point class implementation based elliptic lib
  */
+class GroupElement {
+  constructor(point, curve) {
+    this._ec_point = point; // ECPoint
+    this._curve = curve;
+  };
 
-function GroupElement(point, curve) {
-  this._ec_point = point; // ECPoint
-  this._curve = curve;
+  to_bytes = () => {
+    var x = this._ec_point.getX().toArray();
+    var y = this._ec_point.getY().toArray();
+    return [0x04].concat(x, y);
+  }
+
+  valueOf = () => { return this._ec_point; }
+
+  add = (ge /* GroupElement */) => { return new GroupElement(this.valueOf().add(ge.valueOf())); }
+  mul = (sc /* Scalar */) => { return new GroupElement(this.valueOf().mul(sc.valueOf())); }
+  eq = (ge /* GroupElement */) => { return this.valueOf().eq(ge.valueOf()); }
+}
+
+GroupElement.generate_random = function (curve) {
+  if (typeof curve == "undefined") {
+    curve = default_curve();
+  }
+  return new GroupElement(curve.generator().mul(Scalar.generate_random().valueOf()));
+}
+
+GroupElement.from_bytes = function (buffer) {
+  var ge_size = GroupElement.expected_byte_length();
+  if (buffer.length != ge_size) {
+    throw new Error("Invalid length of data.");
+  }
+  var sc_size = Scalar.expected_byte_length();
+  var x = buffer.slice(1, sc_size + 1);
+  var y = buffer.slice(sc_size + 1, ge_size);
+  return new GroupElement(default_curve()._curve.curve.point(x, y));
 }
 
 GroupElement.expected_byte_length = function (curve /* Curve */, is_compressed) {
@@ -154,37 +57,6 @@ GroupElement.expected_byte_length = function (curve /* Curve */, is_compressed) 
     return 1 + 2 * curve.order_size();
   }
 }
-
-GroupElement.generate_random = function (curve) {
-  if (typeof curve == "undefined") {
-    curve = default_curve();
-  }
-  return new GroupElement(curve.generator().mul(Scalar.generate_random().valueOf()));
-}
-
-
-GroupElement.from_bytes = function (buffer) {
-  var ge_size = GroupElement.expected_byte_length();
-  if (buffer.length != ge_size) {
-    throw new Error("Invalid length of data.");
-  }
-  var sc_size = Scalar.expected_byte_length();
-  var x = buffer.slice(1, sc_size + 1);
-  var y = buffer.slice(sc_size + 1, ge_size);
-  return new GroupElement(default_curve()._curve.curve.point(x, y));
-}
-
-GroupElement.prototype.to_bytes = function () {
-  var x = this._ec_point.getX().toArray();
-  var y = this._ec_point.getY().toArray();
-  return [0x04].concat(x, y);
-}
-
-GroupElement.prototype.valueOf = function () { return this._ec_point; }
-
-GroupElement.prototype.add = function (ge /* GroupElement */) { return new GroupElement(this.valueOf().add(ge.valueOf())); }
-GroupElement.prototype.mul = function (sc /* Scalar */) { return new GroupElement(this.valueOf().mul(sc.valueOf())); }
-GroupElement.prototype.eq = function (ge /* GroupElement */) { return this.valueOf().eq(ge.valueOf()); }
 
 function to_hex(byteArray) {
   return Array.from(byteArray, function (byte) {
@@ -224,17 +96,53 @@ function hash_to_scalar(points) {
   var b2 = new BN(1);
   return new Scalar(b1.add(b2));
 }
+
+
 /**
  * \brief Base private key containing implementation for EC Private keys
  * \brief Main constructor for making PrivateKey object
  */
-function PrivateKey(prvKey /* Scalar */, pubKey /* PublicKey */) {
-  this._scalar = prvKey;  // prvKeyObj
-  if (typeof pubKey == "undefined") {
-    var curve = new Curve();
-    pubKey = new PublicKey(new GroupElement(curve.generator().mul(prvKey.valueOf())));
+class PrivateKey {
+  constructor(prvKey /* Scalar */, pubKey /* PublicKey */) {
+    this._scalar = prvKey;  // prvKeyObj
+    if (typeof pubKey == "undefined") {
+      var curve = new Curve();
+      pubKey = new PublicKey(new GroupElement(curve.generator().mul(prvKey.valueOf())));
+    }
+    this._public_key = pubKey;
   }
-  this._public_key = pubKey;
+
+  /**
+   * \brief Getting the big integer which is representing this Private Key.
+   */
+  valueOf = function () { return this._scalar; }
+
+  /**
+   * \brief Getting generated PublicKey
+   * @return PublicKey
+   */
+  get_public_key = function () {
+    var curve = new Curve();
+    return new PublicKey(new GroupElement(curve.generator().mul(this.valueOf().valueOf())));
+  }
+
+  /**
+   * \brief Getting BIGNUM bytes from existing BigInteger
+   * @return vector of bytes
+   */
+  to_bytes = function () {
+    return this.valueOf().to_bytes();
+  }
+
+}
+
+/**
+ * \brief Get BigInteger from big endian ordered bytes
+ * @param buffer
+ * @return
+ */
+PrivateKey.from_bytes = function (buffer) {
+  return new PrivateKey(Scalar.from_bytes(buffer));
 }
 
 /**
@@ -264,78 +172,60 @@ PrivateKey.generate = function (seed, curve, options) {
   return new PrivateKey(new Scalar(kp.getPrivate()), new PublicKey(new GroupElement(kp.getPublic())));
 }
 
-/**
- * \brief Getting the big integer which is representing this Private Key.
- */
-PrivateKey.prototype.valueOf = function () { return this._scalar; }
 
-/**
- * \brief Getting generated PublicKey
- * @return PublicKey
- */
-PrivateKey.prototype.get_public_key = function () {
-  var curve = new Curve();
-  return new PublicKey(new GroupElement(curve.generator().mul(this.valueOf().valueOf())));
-}
-
-/**
- * \brief Get BigInteger from big endian ordered bytes
- * @param buffer
- * @return
- */
-PrivateKey.from_bytes = function (buffer) {
-  return new PrivateKey(Scalar.from_bytes(buffer));
-}
-
-/**
- * \brief Getting BIGNUM bytes from existing BigInteger
- * @return vector of bytes
- */
-PrivateKey.prototype.to_bytes = function () {
-  return this.valueOf().to_bytes();
-}
 /**
  * \brief PublicKey class is a base implementation for keeping EC Public Key as an object
  */
-function PublicKey(pubKey /* GroupElement */) {
-  this.pubKey = pubKey; // pubKeyObj
-}
+class PublicKey {
+  constructor(pubKey /* GroupElement */) {
+    this.pubKey = pubKey; // pubKeyObj
+  }
+  /**
+   * Getting point from this public key
+   * @return
+   */
+  valueOf = function () {
+    return this.pubKey
+  }
 
-
-/**
- * Getting point from this public key
- * @return
- */
-PublicKey.prototype.valueOf = function () {
-  return this.pubKey
+  to_bytes = function () {
+    return this.valueOf().to_bytes();
+  }
 }
 
 PublicKey.from_bytes = function (buffer) {
   return new PublicKey(GroupElement.from_bytes(buffer));
 }
 
-PublicKey.prototype.to_bytes = function () {
-  return this.valueOf().to_bytes();
-}
+
 /**
  * \brief Base definition for re-encryption key
  */
-function ReEncryptionKey(re_key /* Scalar */, internal_public_key /* GroupElement */) {
-  this._re_key = re_key; // BigInteger
-  this._internal_public_key = internal_public_key; // ECPoint
+class ReEncryptionKey {
+
+  constructor(re_key /* Scalar */, internal_public_key /* GroupElement */) {
+    this._re_key = re_key; // BigInteger
+    this._internal_public_key = internal_public_key; // ECPoint
+  }
+
+  /**
+   * \brief Getting RK number
+   * @return
+   */
+  get_re_key = function () { return this._re_key; }
+
+  /**
+   * Getting RK point
+   * @return
+   */
+  get_internal_public_key = function () { return this._internal_public_key; }
+
+  to_bytes = function () {
+    var rk = this.get_re_key().to_bytes();
+    var ipc = this.get_internal_public_key().to_bytes();
+    return rk.concat(ipc);
+  }
 }
-
-/**
- * \brief Getting RK number
- * @return
- */
-ReEncryptionKey.prototype.get_re_key = function () { return this._re_key; }
-
-/**
- * Getting RK point
- * @return
- */
-ReEncryptionKey.prototype.get_internal_public_key = function () { return this._internal_public_key; }
 
 ReEncryptionKey.from_bytes = function (buffer) {
   var sc_size = Scalar.expected_byte_length();
@@ -351,11 +241,7 @@ ReEncryptionKey.from_bytes = function (buffer) {
   return new ReEncryptionKey(rk, ipc);
 }
 
-ReEncryptionKey.prototype.to_bytes = function () {
-  var rk = this.get_re_key().to_bytes();
-  var ipc = this.get_internal_public_key().to_bytes();
-  return rk.concat(ipc);
-}
+
 /**
  * \brief Combination of parameters as a definition for cryptographic capsule
  * Each capsule contains E(POINT_TYPE), V(POINT_TYPE), s(NUMBER_TYPE)
@@ -366,51 +252,64 @@ ReEncryptionKey.prototype.to_bytes = function () {
  * @param XG
  * @param re_encrypted
  */
-function Capsule(E, V, S, XG, is_re_encrypted) {
-  if (typeof is_re_encrypted == "undefined") {
-    is_re_encrypted = false;
+class Capsule {
+  constructor(E, V, S, XG, is_re_encrypted) {
+    if (typeof is_re_encrypted == "undefined") {
+      is_re_encrypted = false;
+    }
+    this._E = E;  // ECPoint
+    this._V = V;  // ECPoint
+    this._S = S;  // BN
+    this._XG = XG;// ECPoint 
+    this._re_encrypted = is_re_encrypted; //bool
   }
-  this._E = E;  // ECPoint
-  this._V = V;  // ECPoint
-  this._S = S;  // BN
-  this._XG = XG;// ECPoint 
-  this._re_encrypted = is_re_encrypted; //bool
+  /**
+   * Getting particle E as a POINT_TYPE
+   * @return
+   */
+  get_E = () => { return this._E; }
+
+  /**
+   * Getting particle V as a POINT_TYPE
+   * @return
+   */
+  get_V = () => { return this._V; }
+
+  /**
+   * Getting particle S as a NUMBER_TYPE
+   * @return
+   */
+  get_S = () => { return this._S; }
+
+  /**
+   * Getting particle XG
+   * @return
+   */
+  get_XG = () => { return this._XG; }
+
+  /**
+   * \brief Setting capsule as re-encryption capsule
+   */
+  set_re_encrypted = () => { this._re_encrypted = true; }
+
+  /**
+   * \brief Checking if we have re-encryption capsule or not
+   * @return
+   */
+  is_re_encrypted = () => { return this._re_encrypted; }
+
+  to_bytes = () => {
+    var bytearray_E = this.get_E().to_bytes();
+    var bytearray_V = this.get_V().to_bytes();
+    var bytearray_S = this.get_S().to_bytes();
+    var bytearray_XG = [];
+    if (this.is_re_encrypted()) {
+      bytearray_XG = this.get_XG().to_bytes();
+    }
+    return bytearray_E.concat(bytearray_V, bytearray_S, bytearray_XG);
+  }
+
 }
-
-/**
- * Getting particle E as a POINT_TYPE
- * @return
- */
-Capsule.prototype.get_E = function () { return this._E; }
-
-/**
- * Getting particle V as a POINT_TYPE
- * @return
- */
-Capsule.prototype.get_V = function () { return this._V; }
-
-/**
- * Getting particle S as a NUMBER_TYPE
- * @return
- */
-Capsule.prototype.get_S = function () { return this._S; }
-
-/**
- * Getting particle XG
- * @return
- */
-Capsule.prototype.get_XG = function () { return this._XG; }
-
-/**
- * \brief Setting capsule as re-encryption capsule
- */
-Capsule.prototype.set_re_encrypted = function () { this._re_encrypted = true; }
-
-/**
- * \brief Checking if we have re-encryption capsule or not
- * @return
- */
-Capsule.prototype.is_re_encrypted = function () { return this._re_encrypted; }
 
 Capsule.from_bytes = function (buffer) {
   var sc_size = Scalar.expected_byte_length();
@@ -436,25 +335,32 @@ Capsule.from_bytes = function (buffer) {
 
 }
 
-Capsule.prototype.to_bytes = function () {
-  var bytearray_E = this.get_E().to_bytes();
-  var bytearray_V = this.get_V().to_bytes();
-  var bytearray_S = this.get_S().to_bytes();
-  var bytearray_XG = [];
-  if (this.is_re_encrypted()) {
-    bytearray_XG = this.get_XG().to_bytes();
-  }
-  return bytearray_E.concat(bytearray_V, bytearray_S, bytearray_XG);
-}
-
 
 /**
  * \brief Key Pair for public and Private Keys
  * This class used as a combination of Public and Private keys, and can do some actions with both of them
  */
-function KeyPair(prvKey/* PrivateKey */, pubKey/* PublicKey */) {
-  this._private_key = prvKey;  // PrivateKey
-  this._public_key = pubKey;   // PublicKey
+class KeyPair {
+  constructor(prvKey/* PrivateKey */, pubKey/* PublicKey */) {
+    this._private_key = prvKey;  // PrivateKey
+    this._public_key = pubKey;   // PublicKey
+  }
+
+  /**
+   * \brief Getting public key
+   * @return
+   */
+  get_public_key = function () {
+    return this._public_key;
+  }
+
+  /**
+   * Getting private key
+   * @return
+   */
+  get_private_key = function () {
+    return this._private_key;
+  }
 }
 
 /**
@@ -466,22 +372,6 @@ KeyPair.generate_key_pair = function (seed) {
 
   var prvKey = PrivateKey.generate(seed);
   return new KeyPair(prvKey, prvKey.get_public_key());
-}
-
-/**
- * \brief Getting public key
- * @return
- */
-KeyPair.prototype.get_public_key = function () {
-  return this._public_key;
-}
-
-/**
- * Getting private key
- * @return
- */
-KeyPair.prototype.get_private_key = function () {
-  return this._private_key;
 }
 
 /**
