@@ -87,12 +87,12 @@ class Capsule {
             throw new Error("Invalid length of data.");
         }
 
-        var E = GroupElement.from_bytes(buffer.slice(0, ge_size));
-        var V = GroupElement.from_bytes(buffer.slice(ge_size, 2 * ge_size));
-        var S = Scalar.from_bytes(buffer.slice(2 * ge_size, 2 * ge_size + sc_size));
+        var E = GroupElement.from_bytes(buffer.subarray(0, ge_size));
+        var V = GroupElement.from_bytes(buffer.subarray(ge_size, 2 * ge_size));
+        var S = Scalar.from_bytes(buffer.subarray(2 * ge_size, 2 * ge_size + sc_size));
         var XG = undefined;
         if (re_encrypted) {
-            XG = GroupElement.from_bytes(buffer.slice(2 * ge_size + sc_size, 3 * ge_size + sc_size));
+            XG = GroupElement.from_bytes(buffer.subarray(2 * ge_size + sc_size, 3 * ge_size + sc_size));
         }
         return new Capsule(E, V, S, XG, re_encrypted);
 

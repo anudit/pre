@@ -107,8 +107,8 @@ class GroupElement {
             throw new Error("Invalid length of data.");
         }
         var sc_size = Scalar.expected_byte_length();
-        var x = buffer.slice(1, sc_size + 1);
-        var y = buffer.slice(sc_size + 1, ge_size);
+        var x = buffer.subarray(1, sc_size + 1);
+        var y = buffer.subarray(sc_size + 1, ge_size);
         return new GroupElement(default_curve()._curve.curve.point(x, y));
     }
 

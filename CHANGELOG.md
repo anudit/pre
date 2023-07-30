@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.0
+- Update module entry point and build setup.
+
 ## 0.2.0
 - Improvements
 

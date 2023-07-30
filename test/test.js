@@ -20,6 +20,8 @@ let obj = encryptData(pk_A, msg)
 let rk = generateReEncrytionKey(sk_A, pk_B);
 reEncryption(rk, obj)
 
+console.log(obj)
+
 let decryptedData = decryptData(sk_B, obj)
 assert(msg, decryptedData, "Decryption Failed")
 console.log(msg, decryptedData)

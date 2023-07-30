@@ -50,7 +50,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN >> ./.npmrc
           npm publish --provenance --access public
 
       - name: Commit changes
@@ -69,5 +68,5 @@ jobs:
           account: omnid
           project: pre
           release: ${{ github.event.inputs.release_version }}
-          platform-web: pre
+          platform-web: ./
       

@@ -129,8 +129,8 @@ class ReEncryptionKey {
             throw new Error("Invalid length of data.");
         }
 
-        var rk = Scalar.from_bytes(buffer.slice(0, sc_size));
-        var ipc = GroupElement.from_bytes(buffer.slice(sc_size, sc_size + ge_size));
+        var rk = Scalar.from_bytes(buffer.subarray(0, sc_size));
+        var ipc = GroupElement.from_bytes(buffer.subarray(sc_size, sc_size + ge_size));
         return new ReEncryptionKey(rk, ipc);
     }
 }

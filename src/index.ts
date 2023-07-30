@@ -1,7 +1,8 @@
 import CryptoJS from 'crypto-js';
 
+import { Capsule } from './Capsule';
 import { Config, Curve, default_curve } from './Config';
-import { KeyPair, PrivateKey, PublicKey } from './Keys';
+import { KeyPair, PrivateKey, PublicKey, ReEncryptionKey } from './Keys';
 import { GroupElement, Scalar } from './Math';
 import { Proxy } from './Proxy';
 import { SHA256, from_hex, hash_to_scalar, to_hex } from './utils';
@@ -58,4 +59,5 @@ function reEncryption(Rk: string, obj: EncryptedData) {
   obj.key = to_hex(re_capsule.to_bytes())
 }
 
-export { Config, Curve, GroupElement, KeyPair, PrivateKey, Proxy, PublicKey, SHA256, Scalar, decryptData, default_curve, encryptData, from_hex, generateReEncrytionKey, hash_to_scalar, reEncryption, to_hex };
+export { Capsule, Config, Curve, GroupElement, KeyPair, PrivateKey, Proxy, PublicKey, ReEncryptionKey, SHA256, Scalar, decryptData, default_curve, encryptData, from_hex, generateReEncrytionKey, hash_to_scalar, reEncryption, to_hex };
+
