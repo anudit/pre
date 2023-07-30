@@ -1,10 +1,7 @@
 import BN from "bn.js";
 import elliptic from 'elliptic';
 
-const secp256k1 = new elliptic.ec('secp256k1');
-
 import { Curve, default_curve } from './Config';
-
 
 // Scalar.
 /// \brief Generic implementation for Scalar

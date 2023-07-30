@@ -1,3 +1,4 @@
+import BN from 'bn.js';
 import { Curve, default_curve } from "./Config";
 import { GroupElement, Scalar } from "./Math";
 
@@ -172,6 +173,11 @@ class KeyPair {
     static generate_key_pair() {
 
         var prvKey = PrivateKey.generate();
+        return new KeyPair(prvKey, prvKey.get_public_key());
+    }
+
+    static from_private_key(private_key: string) {
+        const prvKey = new PrivateKey(new Scalar(new BN(private_key.startsWith('0x') ? private_key.slice(2) : private_key, 'hex')));
         return new KeyPair(prvKey, prvKey.get_public_key());
     }
 }

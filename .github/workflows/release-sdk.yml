@@ -1,0 +1,76 @@
+name: Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Version of this release"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions: write-all
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      
+      - name: Install Package Dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pnpm install
+
+      - name: Update Package Version
+        run: |
+          NEXT_VERSION=${{ github.event.inputs.release_version }}
+          sed -i 's/"version": ".*"/"version": "'"$NEXT_VERSION"'"/' package.json
+
+      - name: Build Package
+        run: |
+          pnpm build
+
+      - name: Publish Package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN >> ./.npmrc
+          npm publish --provenance --access public
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: Release @omnid/pre@${{ github.event.inputs.release_version }}
+
+      - uses: valist-io/valist-github-action@v2
+        env:
+          VALIST_RELEASER_PK: ${{ secrets.VALIST_RELEASER_PK }}
+        with:
+          rpc-url: https://rpc.valist.io/polygon
+          private-key: ${{ secrets.VALIST_RELEASER_PK }}
+          account: omnid
+          project: pre
+          release: ${{ github.event.inputs.release_version }}
+          platform-web: pre
+
+          
+
+      

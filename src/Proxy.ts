@@ -1,7 +1,8 @@
 
 import { Capsule } from './Capsule';
 import { KeyPair, PrivateKey, PublicKey, ReEncryptionKey } from './Keys';
-import { SHA256, from_hex, hash_to_scalar, to_hex } from './utils';
+import { GroupElement } from './Math';
+import { SHA256, hash_to_scalar } from './utils';
 
 /**
  * \brief Proxy base class for handling library crypto operations and main functionality
@@ -125,7 +126,7 @@ class Proxy {
      * @return
      */
     static decapsulate_re_encrypted = function (capsule: Capsule, privateKey: PrivateKey) {
-        var prime_XG = capsule.get_XG();
+        var prime_XG = capsule.get_XG() as GroupElement;
         var prime_E = capsule.get_E();
         var prime_V = capsule.get_V();
 
@@ -152,8 +153,7 @@ class Proxy {
     static public_key_from_bytes(data: Buffer) { return PublicKey.from_bytes(data); }
     static re_encryption_key_from_bytes = function (data: Buffer) { return ReEncryptionKey.from_bytes(data); }
     static capsule_from_bytes = function (data: Buffer) { return Capsule.from_bytes(data); }
-    static to_hex = function (data: number[]) { return to_hex(data); }
-    static from_hex(data: string) { return from_hex(data); }
+
 }
 
 

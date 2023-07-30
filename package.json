@@ -23,12 +23,13 @@
   "scripts": {
     "build": "run-p build:*",
     "build:node": "tsup src/index.ts --format esm,cjs --outDir lib --dts --minify --legacy-output --clean --keepNames --treeshake",
-    "buildnodedev": "tsup src/index.ts --format esm,cjs --outDir lib --legacy-output --clean --keepNames --treeshake",
-    "build:browser": "tsup src/index.ts --format iife --outDir dist --minify --clean --globalName=Convo --platform=browser",
+    "build:browser": "tsup src/index.ts --format iife --outDir dist --minify --clean --globalName=PRE --platform=browser",
+    "buildnodedev": "tsup src/index.ts --format esm,cjs --outDir lib --dts --legacy-output --clean --keepNames --treeshake",
     "bench": "cd ./../../benchmarks && pnpm bench",
     "example": "pnpm build && cd examples/nextjs && pnpm dev",
     "lint": "eslint ./src/ --fix",
     "release": "pnpm build && npm publish",
+    "test": "node ./test/test.js",
     "bundlestats": "pnpm build:node --metafile && pnpm esbuild-visualizer --metadata ./lib/metafile-esm.json && pnpm open-cli stats.html",
     "typegen": "typechain --target ethers-v5 --out-dir ./src/adaptors/types/ './src/adaptors/abis/*.json'"
   },
@@ -85,7 +86,6 @@
     "bn.js": "^5.2.1",
     "crypto-js": "^4.1.1",
     "elliptic": "^6.5.4",
-    "js-sha256": "^0.9.0",
     "viem": "^1.4.2"
   }
 }
