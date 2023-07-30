@@ -1,5 +1,5 @@
-import elliptic from 'elliptic';
 import BN from 'bn.js';
+import elliptic from 'elliptic';
 
 declare class Config {
     _curve: Curve;
@@ -73,6 +73,56 @@ declare class GroupElement {
     static generate_random: () => GroupElement;
     static from_bytes: (buffer: Buffer) => GroupElement;
     static expected_byte_length: (is_compressed?: boolean) => any;
+}
+
+/**
+ * \brief Combination of parameters as a definition for cryptographic capsule
+ * Each capsule contains E(POINT_TYPE), V(POINT_TYPE), s(NUMBER_TYPE)
+ * \brief Making capsule with given particles
+ * @param E
+ * @param V
+ * @param S
+ * @param XG
+ * @param re_encrypted
+ */
+declare class Capsule {
+    _E: GroupElement;
+    _V: GroupElement;
+    _S: Scalar;
+    _XG?: GroupElement;
+    _re_encrypted: boolean;
+    constructor(E: GroupElement, V: GroupElement, S: Scalar, XG?: GroupElement, is_re_encrypted?: boolean);
+    /**
+     * Getting particle E as a POINT_TYPE
+     * @return
+     */
+    get_E(): GroupElement;
+    /**
+     * Getting particle V as a POINT_TYPE
+     * @return
+     */
+    get_V(): GroupElement;
+    /**
+     * Getting particle S as a NUMBER_TYPE
+     * @return
+     */
+    get_S(): Scalar;
+    /**
+     * Getting particle XG
+     * @return
+     */
+    get_XG(): GroupElement | undefined;
+    /**
+     * \brief Setting capsule as re-encryption capsule
+     */
+    set_re_encrypted(): void;
+    /**
+     * \brief Checking if we have re-encryption capsule or not
+     * @return
+     */
+    is_re_encrypted(): boolean;
+    to_bytes(): number[];
+    static from_bytes(buffer: Buffer): Capsule;
 }
 
 /**
@@ -172,56 +222,6 @@ declare class KeyPair {
 }
 
 /**
- * \brief Combination of parameters as a definition for cryptographic capsule
- * Each capsule contains E(POINT_TYPE), V(POINT_TYPE), s(NUMBER_TYPE)
- * \brief Making capsule with given particles
- * @param E
- * @param V
- * @param S
- * @param XG
- * @param re_encrypted
- */
-declare class Capsule {
-    _E: GroupElement;
-    _V: GroupElement;
-    _S: Scalar;
-    _XG?: GroupElement;
-    _re_encrypted: boolean;
-    constructor(E: GroupElement, V: GroupElement, S: Scalar, XG?: GroupElement, is_re_encrypted?: boolean);
-    /**
-     * Getting particle E as a POINT_TYPE
-     * @return
-     */
-    get_E(): GroupElement;
-    /**
-     * Getting particle V as a POINT_TYPE
-     * @return
-     */
-    get_V(): GroupElement;
-    /**
-     * Getting particle S as a NUMBER_TYPE
-     * @return
-     */
-    get_S(): Scalar;
-    /**
-     * Getting particle XG
-     * @return
-     */
-    get_XG(): GroupElement | undefined;
-    /**
-     * \brief Setting capsule as re-encryption capsule
-     */
-    set_re_encrypted(): void;
-    /**
-     * \brief Checking if we have re-encryption capsule or not
-     * @return
-     */
-    is_re_encrypted(): boolean;
-    to_bytes(): number[];
-    static from_bytes(buffer: Buffer): Capsule;
-}
-
-/**
  * \brief Proxy base class for handling library crypto operations and main functionality
  * Each initialized Proxy object should contain Context which will define
  * base parameters for crypto operations and configurations
@@ -298,4 +298,4 @@ declare function decryptData(privateKey: string, obj: EncryptedData): string;
 declare function generateReEncrytionKey(privateKey: string, publicKey: string): string;
 declare function reEncryption(Rk: string, obj: EncryptedData): void;
 
-export { Config, Curve, GroupElement, KeyPair, PrivateKey, Proxy, PublicKey, SHA256, Scalar, decryptData, default_curve, encryptData, from_hex, generateReEncrytionKey, hash_to_scalar, reEncryption, to_hex };
+export { Capsule, Config, Curve, GroupElement, KeyPair, PrivateKey, Proxy, PublicKey, ReEncryptionKey, SHA256, Scalar, decryptData, default_curve, encryptData, from_hex, generateReEncrytionKey, hash_to_scalar, reEncryption, to_hex };

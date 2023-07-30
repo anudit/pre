@@ -1,6 +1,6 @@
 {
   "name": "@omnid/pre",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A proxy re-encryption implementation using the secp256k1 curve.",
   "main": "./lib/index.js",
   "module": "./lib/esm/index.js",
