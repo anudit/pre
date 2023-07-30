@@ -28,7 +28,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v2
         with:
           version: latest
       
@@ -70,7 +70,4 @@ jobs:
           project: pre
           release: ${{ github.event.inputs.release_version }}
           platform-web: pre
-
-          
-
       
