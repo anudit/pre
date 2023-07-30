@@ -8,7 +8,7 @@
 
 A proxy re-encryption implementation using the secp256k1 curve
 
-Check out the [Changelog](/packages/sdk/CHANGELOG.md)
+Check out the [Changelog](CHANGELOG.md)
 
 ## Installation
 
@@ -17,3 +17,5 @@ yarn add @omnid/pre
 npm i --save @omnid/pre
 pnpm i --save @omnid/pre
 ```
+
+Inspired from [recrypt-js](https://github.com/yjjnls/recrypt-js)
