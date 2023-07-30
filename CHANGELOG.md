@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.0
+- Update Dependencies
+
 ## 0.3.0
 - Update module entry point and build setup.
 
