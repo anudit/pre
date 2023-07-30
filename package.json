@@ -2,17 +2,17 @@
   "name": "@omnid/pre",
   "version": "0.1.0",
   "description": "A proxy re-encryption implementation using the secp256k1 curve.",
-  "main": "./lib/index.js",
-  "module": "./lib/esm/index.js",
+  "main": "./lib/index.ts",
+  "module": "./lib/esm/index.ts",
   "types": "./lib/index.d.ts",
   "typings": "./lib/index.d.ts",
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
-      "require": "./lib/index.js",
-      "node": "./lib/index.js",
-      "import": "./lib/esm/index.js",
-      "default": "./lib/esm/index.js"
+      "require": "./lib/index.ts",
+      "node": "./lib/index.ts",
+      "import": "./lib/esm/index.ts",
+      "default": "./lib/esm/index.ts"
     }
   },
   "sideEffects": false,
@@ -22,9 +22,9 @@
   ],
   "scripts": {
     "build": "run-p build:*",
-    "build:node": "tsup src/index.js --format esm,cjs --outDir lib --dts --minify --legacy-output --clean --keepNames --treeshake",
-    "buildnodedev": "tsup src/index.js --format esm,cjs --outDir lib --legacy-output --clean --keepNames --treeshake",
-    "build:browser": "tsup src/index.js --format iife --outDir dist --minify --clean --globalName=Convo --platform=browser",
+    "build:node": "tsup src/index.ts --format esm,cjs --outDir lib --dts --minify --legacy-output --clean --keepNames --treeshake",
+    "buildnodedev": "tsup src/index.ts --format esm,cjs --outDir lib --legacy-output --clean --keepNames --treeshake",
+    "build:browser": "tsup src/index.ts --format iife --outDir dist --minify --clean --globalName=Convo --platform=browser",
     "bench": "cd ./../../benchmarks && pnpm bench",
     "example": "pnpm build && cd examples/nextjs && pnpm dev",
     "lint": "eslint ./src/ --fix",
@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "@types/bn.js": "^5.1.1",
+    "@types/crypto-js": "^4.1.1",
     "@types/elliptic": "^6.4.14",
     "bn.js": "^5.2.1",
     "crypto-js": "^4.1.1",
