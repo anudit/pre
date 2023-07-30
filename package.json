@@ -1,6 +1,6 @@
 {
   "name": "@omnid/pre",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A proxy re-encryption implementation using the secp256k1 curve.",
   "main": "./lib/index.ts",
   "module": "./lib/esm/index.ts",
